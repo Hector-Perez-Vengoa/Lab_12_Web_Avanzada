@@ -20,7 +20,7 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
     }
 
     return NextResponse.json(book)
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Error al obtener libro' },
       { status: 500 }
@@ -31,8 +31,9 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
 // PUT – Actualizar un libro
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params
   try {
     const body = await request.json()
     const {
@@ -75,14 +76,14 @@ export async function PUT(
     }
 
     const book = await prisma.book.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         title,
         description,
         isbn,
-        publishedYear: publishedYear ? parseInt(publishedYear) : undefined,
+        publishedYear: publishedYear ? Number.parseInt(publishedYear) : undefined,
         genre,
-        pages: pages ? parseInt(pages) : undefined,
+        pages: pages ? Number.parseInt(pages) : undefined,
         authorId,
       },
       include: {
@@ -91,15 +92,16 @@ export async function PUT(
     })
 
     return NextResponse.json(book)
-  } catch (error: any) {
-    if (error.code === 'P2025') {
+  } catch (error) {
+    const code = (error as { code?: string }).code
+    if (code === 'P2025') {
       return NextResponse.json(
         { error: 'Libro no encontrado' },
         { status: 404 }
       )
     }
 
-    if (error.code === 'P2002') {
+    if (code === 'P2002') {
       return NextResponse.json(
         { error: 'El ISBN ya existe' },
         { status: 409 }
@@ -118,14 +120,15 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
   const { id } = await context.params;
   try {
     await prisma.book.delete({
-      where: { id: id },
+      where: { id },
     })
 
     return NextResponse.json({
       message: 'Libro eliminado correctamente',
     })
-  } catch (error: any) {
-    if (error.code === 'P2025') {
+  } catch (error) {
+    const code = (error as { code?: string }).code
+    if (code === 'P2025') {
       return NextResponse.json(
         { error: 'Libro no encontrado' },
         { status: 404 }

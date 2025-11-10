@@ -27,7 +27,7 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
     }
 
     return NextResponse.json(author)
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Error al obtener autor' },
       { status: 500 }
@@ -38,8 +38,9 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
 // PUT – Actualizar un autor
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params
   try {
     const body = await request.json()
     const { name, email, bio, nationality, birthYear } = body
@@ -56,13 +57,13 @@ export async function PUT(
     }
 
     const author = await prisma.author.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name,
         email,
         bio,
         nationality,
-        birthYear: birthYear ? parseInt(birthYear) : null,
+  birthYear: birthYear ? Number.parseInt(birthYear) : null,
       },
       include: {
         books: true,
@@ -70,14 +71,15 @@ export async function PUT(
     })
 
     return NextResponse.json(author)
-  } catch (error: any) {
-    if (error.code === 'P2025') {
+  } catch (error) {
+    const code = (error as { code?: string }).code
+    if (code === 'P2025') {
       return NextResponse.json(
         { error: 'Autor no encontrado' },
         { status: 404 }
       )
     }
-    if (error.code === 'P2002') {
+    if (code === 'P2002') {
       return NextResponse.json(
         { error: 'El email ya está registrado' },
         { status: 409 }
@@ -92,18 +94,20 @@ export async function PUT(
 // DELETE – Eliminar un autor
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params
   try {
     await prisma.author.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({
       message: 'Autor eliminado correctamente'
     })
-  } catch (error: any) {
-    if (error.code === 'P2025') {
+  } catch (error) {
+    const code = (error as { code?: string }).code
+    if (code === 'P2025') {
       return NextResponse.json(
         { error: 'Autor no encontrado' },
         { status: 404 }

@@ -28,7 +28,7 @@ export async function GET(request: Request) {
     })
 
     return NextResponse.json(books)
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Error al obtener libros' },
       { status: 500 }
@@ -100,8 +100,9 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json(book, { status: 201 })
-  } catch (error: any) {
-    if (error.code === 'P2002') {
+  } catch (error) {
+    const code = (error as { code?: string }).code
+    if (code === 'P2002') {
       return NextResponse.json(
         { error: 'El ISBN ya existe' },
         { status: 409 }

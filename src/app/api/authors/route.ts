@@ -61,8 +61,9 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json(author, { status: 201 })
-    } catch (error: any) {
-    if (error.code === 'P2002') {
+  } catch (error) {
+  const code = (error as { code?: string }).code
+  if (code === 'P2002') {
         return NextResponse.json(
         { error: 'El email ya está registrado' },
         { status: 409 }

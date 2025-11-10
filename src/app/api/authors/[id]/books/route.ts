@@ -3,13 +3,14 @@ import { prisma } from "../../../../lib/prisma";
 
 // GET – Obtener todos los libros de un autor específico
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  req: Request,
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params
   try {
     // Verifica que el autor existe
     const author = await prisma.author.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!author) {
@@ -21,7 +22,7 @@ export async function GET(
 
     // Obtener los libros del autor
     const books = await prisma.book.findMany({
-      where: { authorId: params.id },
+      where: { authorId: id },
       orderBy: { publishedYear: 'desc' },
     })
 
@@ -33,7 +34,7 @@ export async function GET(
       totalBooks: books.length,
       books
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Error al obtener libros del autor' },
       { status: 500 }
